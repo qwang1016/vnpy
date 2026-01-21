@@ -1,7 +1,8 @@
 import multiprocessing
 import sys
-from time import sleep
 from datetime import datetime, time
+from pathlib import Path
+from time import sleep
 
 from vnpy.event import EventEngine
 from vnpy.trader.setting import SETTINGS
@@ -11,6 +12,11 @@ from vnpy.trader.logger import INFO, logger
 from vnpy_ctp import CtpGateway
 from vnpy_ctastrategy import CtaStrategyApp, CtaEngine
 from vnpy_ctastrategy.base import EVENT_CTA_LOG
+
+STRATEGY_PATH = Path(__file__).parent / "strategies"
+sys.path.append(str(STRATEGY_PATH))
+
+from simple_ma_cta_strategy import SimpleMaCtaStrategy
 
 
 SETTINGS["log.active"] = True
@@ -76,6 +82,18 @@ def run_child() -> None:
 
     cta_engine.init_engine()
     logger.info("CTA策略初始化完成")
+
+    cta_engine.add_strategy(
+        SimpleMaCtaStrategy,
+        "simple_ma_rb2605",
+        "rb2605.SHFE",
+        {
+            "fast_window": 10,
+            "slow_window": 30,
+            "fixed_size": 1,
+        },
+    )
+    logger.info("CTA策略实例已添加")
 
     cta_engine.init_all_strategies()
     sleep(60)   # Leave enough time to complete strategy initialization
